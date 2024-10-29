@@ -1,0 +1,30 @@
+#pragma kernel CSMain
+
+// Buffers
+RWStructuredBuffer<float3> vertices;
+StructuredBuffer<float3> originalVertices;
+
+// Parameters
+float _Time;
+float _WaveHeight;
+float _WaveFrequency;
+uint _VertexCount;
+float4x4 _LocalToWorld;
+
+[numthreads(64,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+    
+    // Get vertex world position
+    float3 worldPos = mul(_LocalToWorld, float4(originalVertices[id.x], 1.0)).xyz;
+    
+    // Calculate wave
+    float wave = sin(worldPos.x * _WaveFrequency + _Time) * 
+                 sin(worldPos.z * _WaveFrequency + _Time) * _WaveHeight;
+                 
+    // Update vertex
+    vertices[id.x] = float3(originalVertices[id.x].x,
+                           originalVertices[id.x].y + wave,
+                           originalVertices[id.x].z);
+}
