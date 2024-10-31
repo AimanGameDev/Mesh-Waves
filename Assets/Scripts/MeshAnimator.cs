@@ -4,54 +4,60 @@ using UnityEngine;
 public class MeshAnimator : MonoBehaviour
 {
     public ComputeShader computeShader;
-    [Range(0, 2)] public float waveHeight = 0.5f;
-    [Range(0, 5)] public float waveFrequency = 1f;
-
-    private ComputeBuffer vertexBuffer;
-    private ComputeBuffer originalVertexBuffer;
+    public float damping = 0.5f;
+    public ComputeBuffer amplitudesBuffer;
+    public ComputeBuffer previousAmplitudesBuffer;
     private Mesh mesh;
-    private Vector3[] vertices;
-    private Vector3[] originalVertices;
-    private int kernelHandle;
-    private uint threadGroupSize;
+    public Material waveVisualizerMaterial;
+    private int m_kernelHandle;
+    private uint m_threadGroupSize;
+    private int vertexCount;
 
     void Start()
     {
         mesh = GetComponent<MeshFilter>().mesh;
-        vertices = mesh.vertices;
-        originalVertices = mesh.vertices;
+        vertexCount = mesh.vertexCount;
+        amplitudesBuffer = new ComputeBuffer(vertexCount, sizeof(float));
+        previousAmplitudesBuffer = new ComputeBuffer(vertexCount, sizeof(float));
 
-        vertexBuffer = new ComputeBuffer(vertices.Length, sizeof(float) * 3);
-        originalVertexBuffer = new ComputeBuffer(vertices.Length, sizeof(float) * 3);
-        
-        vertexBuffer.SetData(vertices);
-        originalVertexBuffer.SetData(originalVertices);
+        var previousAmplitudes = new float[vertexCount];
+        for (int i = 0; i < vertexCount; i++)
+        {
+            previousAmplitudes[i] = UnityEngine.Random.Range(0.0f, 1.0f);
+        }
+        previousAmplitudesBuffer.SetData(previousAmplitudes);
 
-        kernelHandle = computeShader.FindKernel("CSMain");
-        computeShader.GetKernelThreadGroupSizes(kernelHandle, out threadGroupSize, out _, out _);
+        m_kernelHandle = computeShader.FindKernel("CSMain");
+        computeShader.GetKernelThreadGroupSizes(m_kernelHandle, out m_threadGroupSize, out _, out _);
+
+        computeShader.SetBuffer(m_kernelHandle, "amplitudes", amplitudesBuffer);
+        computeShader.SetBuffer(m_kernelHandle, "previousAmplitudes", previousAmplitudesBuffer);
+        computeShader.SetInt("_Width", vertexCount / 2);
+        computeShader.SetInt("_Height", vertexCount / 2);
+
+        waveVisualizerMaterial.SetBuffer("amplitudes", amplitudesBuffer);
     }
 
     void Update()
     {
-        computeShader.SetBuffer(kernelHandle, "vertices", vertexBuffer);
-        computeShader.SetBuffer(kernelHandle, "originalVertices", originalVertexBuffer);
-        computeShader.SetFloat("_Time", Time.time);
-        computeShader.SetFloat("_WaveHeight", waveHeight);
-        computeShader.SetFloat("_WaveFrequency", waveFrequency);
-        computeShader.SetInt("_VertexCount", vertices.Length);
+        computeShader.SetFloat("_Damping", damping);
         computeShader.SetMatrix("_LocalToWorld", transform.localToWorldMatrix);
 
-        int threadGroups = Mathf.CeilToInt(vertices.Length / (float)threadGroupSize);
-        computeShader.Dispatch(kernelHandle, threadGroups, 1, 1);
+        int threadGroups = Mathf.CeilToInt(vertexCount / (float)m_threadGroupSize);
+        computeShader.Dispatch(m_kernelHandle, threadGroups, 1, 1);
+    
+        var amplitudes = new float[vertexCount];
+        amplitudesBuffer.GetData(amplitudes);
 
-        vertexBuffer.GetData(vertices);
-        mesh.vertices = vertices;
-        mesh.RecalculateNormals();
+        for (int i = 0; i < vertexCount; i++)
+        {
+            Debug.Log(amplitudes[i]);
+        }
     }
 
     void OnDestroy()
     {
-        vertexBuffer?.Release();
-        originalVertexBuffer?.Release();
+        amplitudesBuffer?.Release();
+        previousAmplitudesBuffer?.Release();
     }
 }

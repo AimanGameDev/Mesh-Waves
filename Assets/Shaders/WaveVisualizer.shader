@@ -5,6 +5,7 @@ Shader "Custom/WaveVisualizer"
         _MainTex ("Texture", 2D) = "white" {}
         _ColorA ("Color A", Color) = (1,0,0,1)
         _ColorB ("Color B", Color) = (0,0,1,1)
+        _WaveHeight ("Wave Height", Float) = 1.0
     }
     SubShader
     {
@@ -22,6 +23,7 @@ Shader "Custom/WaveVisualizer"
             {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
+                uint vertexID : SV_VertexID;
             };
 
             struct v2f
@@ -35,15 +37,24 @@ Shader "Custom/WaveVisualizer"
             float4 _MainTex_ST;
             float4 _ColorA;
             float4 _ColorB;
+            float _WaveHeight;
+
+            // Add buffer reference
+            StructuredBuffer<float> amplitudes;
 
             v2f vert (appdata v)
             {
                 v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
+                
+                float amplitude = amplitudes[v.vertexID];
+                
+                float4 modifiedVertex = v.vertex;
+                modifiedVertex.y += amplitude * _WaveHeight;
+                
+                o.vertex = UnityObjectToClipPos(modifiedVertex);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 
-                // Color based on height
-                float heightColor = (v.vertex.y + 0.5) * 0.5; // Normalize to 0-1
+                float heightColor = (amplitude + 1.0) * 0.5; 
                 o.color = lerp(_ColorA, _ColorB, heightColor);
                 
                 return o;
