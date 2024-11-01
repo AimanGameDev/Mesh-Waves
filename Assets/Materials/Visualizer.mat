@@ -29,7 +29,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _WaveHeight: 20
+    - _WaveHeight: 4
     - _WaveStrength: 2.01
     m_Colors:
     - _ColorA: {r: 0, g: 0.16600561, b: 1, a: 1}

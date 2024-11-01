@@ -1,13 +1,15 @@
 #pragma kernel CSMain
 
 // Buffers
-RWStructuredBuffer<float> amplitudes;
 RWStructuredBuffer<float> previousAmplitudes;
+RWStructuredBuffer<float> currentAmplitudes;
+RWStructuredBuffer<float> visualizerAmplitudes;
 
 // Parameters
 uint _Width;
 uint _Height;
 float _Damping;
+uint _CurrentBuffer;
 
 [numthreads(64,1,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
@@ -16,21 +18,42 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     uint x = id.x % _Width;
     uint y = id.x / _Width;
+    
+    uint hasLeft = x > 0;
+    uint hasRight = x < (_Width - 1);
+    uint hasUp = y > 0;
+    uint hasDown = y < (_Height - 1);
 
-    uint leftIndex = id.x - 1;
-    uint rightIndex = id.x + 1;
-    uint upIndex = id.x - _Width;
-    uint downIndex = id.x + _Width;
+    float current, left, right, up, down;
+    
+    if (_CurrentBuffer == 0)
+    {
+        left = previousAmplitudes[id.x - hasLeft] * hasLeft;
+        right = previousAmplitudes[id.x + hasRight] * hasRight;
+        up = previousAmplitudes[id.x - (hasUp * _Width)] * hasUp;
+        down = previousAmplitudes[id.x + (hasDown * _Width)] * hasDown;
+        current = currentAmplitudes[id.x];
+    }
+    else
+    {
+        left = currentAmplitudes[id.x - hasLeft] * hasLeft;
+        right = currentAmplitudes[id.x + hasRight] * hasRight;
+        up = currentAmplitudes[id.x - (hasUp * _Width)] * hasUp;
+        down = currentAmplitudes[id.x + (hasDown * _Width)] * hasDown;
+        current = previousAmplitudes[id.x];
+    }
 
-    //TODO: Remove branching
-    float current = amplitudes[id.x];
-    float left = leftIndex >= 0 ? amplitudes[leftIndex] : 0.0;
-    float right = rightIndex < _Width * _Height ? amplitudes[rightIndex] : 0.0;
-    float up = upIndex >= 0 ? amplitudes[upIndex] : 0.0;
-    float down = downIndex < _Width * _Height ? amplitudes[downIndex] : 0.0;
+    float newAmplitude = (left + right + up + down) / 2.0 - current;
+    newAmplitude *= _Damping;
 
-    float newAmplitude = (current + left + right + up + down) / 5.0 * (1.0 - _Damping);
-
-    amplitudes[id.x] = newAmplitude;
-    previousAmplitudes[id.x] = amplitudes[id.x];
+    if (_CurrentBuffer == 0)
+    {
+        currentAmplitudes[id.x] = newAmplitude;
+    }
+    else
+    {
+        previousAmplitudes[id.x] = newAmplitude;
+    }
+    
+    visualizerAmplitudes[id.x] = newAmplitude;
 }
