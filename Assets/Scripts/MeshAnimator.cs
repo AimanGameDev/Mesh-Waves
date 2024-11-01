@@ -6,6 +6,7 @@ public class MeshAnimator : MonoBehaviour
     public ComputeShader computeShader;
     [Range(0.0f, 1.0f)]
     public float damping = 0.5f;
+    public ComputeBuffer inputAmplitudesBuffer;
     public ComputeBuffer currentAmplitudesBuffer;
     public ComputeBuffer previousAmplitudesBuffer;
     public ComputeBuffer visualizerAmplitudesBuffer;
@@ -15,6 +16,7 @@ public class MeshAnimator : MonoBehaviour
     private uint m_threadGroupSize;
     private int vertexCount;
     private int m_currentBuffer;
+    private float[] m_inputAmplitudes;
 
     void Start()
     {
@@ -22,23 +24,18 @@ public class MeshAnimator : MonoBehaviour
 
         mesh = GetComponent<MeshFilter>().mesh;
         vertexCount = mesh.vertexCount;
-        
+
+        inputAmplitudesBuffer = new ComputeBuffer(vertexCount, sizeof(float));
         currentAmplitudesBuffer = new ComputeBuffer(vertexCount, sizeof(float));
         previousAmplitudesBuffer = new ComputeBuffer(vertexCount, sizeof(float));
         visualizerAmplitudesBuffer = new ComputeBuffer(vertexCount, sizeof(float));
 
-        var initialAmplitudes = new float[vertexCount];
-        for (int i = 0; i < vertexCount; i++)
-        {
-            initialAmplitudes[i] = Random.Range(0f, 1f);  // Random initial disturbance
-        }
-        currentAmplitudesBuffer.SetData(initialAmplitudes);
-        previousAmplitudesBuffer.SetData(initialAmplitudes);
-        visualizerAmplitudesBuffer.SetData(initialAmplitudes);
+        m_inputAmplitudes = new float[vertexCount];
 
         m_kernelHandle = computeShader.FindKernel("CSMain");
         computeShader.GetKernelThreadGroupSizes(m_kernelHandle, out m_threadGroupSize, out _, out _);
 
+        computeShader.SetBuffer(m_kernelHandle, "inputAmplitudes", inputAmplitudesBuffer);
         computeShader.SetBuffer(m_kernelHandle, "currentAmplitudes", currentAmplitudesBuffer);
         computeShader.SetBuffer(m_kernelHandle, "previousAmplitudes", previousAmplitudesBuffer);
         computeShader.SetBuffer(m_kernelHandle, "visualizerAmplitudes", visualizerAmplitudesBuffer);
@@ -54,10 +51,13 @@ public class MeshAnimator : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            var initialAmplitudes = new float[vertexCount];
-            initialAmplitudes[vertexCount / 2] = 1.0f;
-            currentAmplitudesBuffer.SetData(initialAmplitudes);
-            previousAmplitudesBuffer.SetData(initialAmplitudes);
+            m_inputAmplitudes[vertexCount / 2] = 1.0f;
+            inputAmplitudesBuffer.SetData(m_inputAmplitudes);
+        }
+        else if(Input.GetKeyUp(KeyCode.Space))
+        {
+            m_inputAmplitudes[vertexCount / 2] = 0.0f;
+            inputAmplitudesBuffer.SetData(m_inputAmplitudes);
         }
 
         computeShader.SetFloat("_Damping", damping);
@@ -70,31 +70,9 @@ public class MeshAnimator : MonoBehaviour
 
     void OnDestroy()
     {
+        inputAmplitudesBuffer?.Release();
         currentAmplitudesBuffer?.Release();
         previousAmplitudesBuffer?.Release();
         visualizerAmplitudesBuffer?.Release();
-    }
-
-    [ContextMenu("Show Vertices")]
-    void ShowVertices()
-    {
-        var vertices = GetComponent<MeshFilter>().mesh.vertices;
-        foreach (var vertex in vertices)
-        {
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.transform.position = vertex;
-            cube.transform.localScale = Vector3.one * 0.1f;
-            cube.transform.parent = transform;
-        }
-        Debug.Log(vertices.Length);
-    }
-
-    [ContextMenu("Destroy Vertices")]
-    void DestroyVertices()
-    {
-        for (int i = transform.childCount - 1; i >= 0 ; i--)
-        {
-            DestroyImmediate(transform.GetChild(0).gameObject);
-        }
     }
 }

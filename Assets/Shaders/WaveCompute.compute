@@ -1,6 +1,7 @@
 #pragma kernel CSMain
 
 // Buffers
+StructuredBuffer<float> inputAmplitudes;
 RWStructuredBuffer<float> previousAmplitudes;
 RWStructuredBuffer<float> currentAmplitudes;
 RWStructuredBuffer<float> visualizerAmplitudes;
@@ -43,8 +44,9 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         current = previousAmplitudes[id.x];
     }
 
-    float newAmplitude = (left + right + up + down) / 2.0 - current;
+    float newAmplitude = inputAmplitudes[id.x] + (left + right + up + down) / 2.0 - current;
     newAmplitude *= _Damping;
+    newAmplitude = clamp(newAmplitude, -1.0f, 1.0f);
 
     if (_CurrentBuffer == 0)
     {
