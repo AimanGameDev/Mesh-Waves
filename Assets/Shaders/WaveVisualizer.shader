@@ -8,6 +8,7 @@ Shader "Custom/WaveVisualizer"
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
         _WaveHeight ("Wave Height", Float) = 1.0
+        _AmplitudeMultiplier ("Amplitude Multiplier", Float) = 1.0
     }
     SubShader
     {
@@ -27,6 +28,7 @@ Shader "Custom/WaveVisualizer"
         float4 _ColorA;
         float4 _ColorB;
         float _WaveHeight;
+        float _AmplitudeMultiplier;
 
         struct Input
         {
@@ -56,13 +58,12 @@ Shader "Custom/WaveVisualizer"
             UNITY_INITIALIZE_OUTPUT(Input, o);
             
             #ifdef SHADER_API_D3D11
-                float amplitude = amplitudes[v.vertexID];
+                const float amplitude = amplitudes[v.vertexID];
                 v.vertex.y += amplitude * _WaveHeight;
                 
-                float heightColor = (amplitude + 1.0) * 0.5;
-                o.vertexColor = lerp(_ColorA, _ColorB, heightColor);
+                v.color = lerp(_ColorA, _ColorB, amplitude * _AmplitudeMultiplier);
             #else
-                o.vertexColor = _ColorA;
+                v.color = _ColorA;
             #endif
         }
 
