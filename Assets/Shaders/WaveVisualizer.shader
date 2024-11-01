@@ -59,7 +59,6 @@ Shader "Custom/WaveVisualizer"
                 float amplitude = amplitudes[v.vertexID];
                 v.vertex.y += amplitude * _WaveHeight;
                 
-                // Store color data
                 float heightColor = (amplitude + 1.0) * 0.5;
                 o.vertexColor = lerp(_ColorA, _ColorB, heightColor);
             #else

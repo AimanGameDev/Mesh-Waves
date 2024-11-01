@@ -1,7 +1,8 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter))]
-public class MeshAnimator : MonoBehaviour
+public class PlaneMeshAnimator : MonoBehaviour
 {
     public ComputeShader computeShader;
     [Range(0.0f, 1.0f)]
@@ -17,6 +18,8 @@ public class MeshAnimator : MonoBehaviour
     private int vertexCount;
     private int m_currentBuffer;
     private float[] m_inputAmplitudes;
+
+    private List<int> m_disturbedVertices = new List<int>();
 
     void Start()
     {
@@ -49,16 +52,18 @@ public class MeshAnimator : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        for (int i = 0; i < m_inputAmplitudes.Length; i++)
         {
-            m_inputAmplitudes[vertexCount / 2] = 1.0f;
-            inputAmplitudesBuffer.SetData(m_inputAmplitudes);
+            m_inputAmplitudes[i] = 0.0f;
         }
-        else if(Input.GetKeyUp(KeyCode.Space))
+        for (int i = 0; i < m_disturbedVertices.Count; i++)
         {
-            m_inputAmplitudes[vertexCount / 2] = 0.0f;
-            inputAmplitudesBuffer.SetData(m_inputAmplitudes);
+            m_inputAmplitudes[m_disturbedVertices[i]] = 1.0f;
         }
+
+        inputAmplitudesBuffer.SetData(m_inputAmplitudes);
+
+        m_disturbedVertices.Clear();
 
         computeShader.SetFloat("_Damping", damping);
         computeShader.SetInt("_CurrentBuffer", m_currentBuffer);
@@ -66,6 +71,11 @@ public class MeshAnimator : MonoBehaviour
     
         int threadGroups = Mathf.CeilToInt(vertexCount / (float)m_threadGroupSize);
         computeShader.Dispatch(m_kernelHandle, threadGroups, 1, 1);
+    }
+
+    public void AddDisturbedVertex(int vertexIndex)
+    {
+        m_disturbedVertices.Add(vertexIndex);
     }
 
     void OnDestroy()

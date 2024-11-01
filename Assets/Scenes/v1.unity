@@ -301,20 +301,20 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.27135274, y: -0.0034649076, z: 0.0009768457, w: 0.9624733}
-  m_LocalPosition: {x: 4.972223, y: 1.7901591, z: -1.2661039}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 5, y: 9.52, z: 5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!43 &1592803079
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!43 &1861732615
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Procedural Plane
+  m_Name: Procedural Plane Instance
   serializedVersion: 11
   m_SubMeshes:
   - serializedVersion: 2
@@ -486,6 +486,8 @@ GameObject:
   - component: {fileID: 1877795067}
   - component: {fileID: 1877795070}
   - component: {fileID: 1877795071}
+  - component: {fileID: 1877795072}
+  - component: {fileID: 1877795073}
   m_Layer: 0
   m_Name: Plane
   m_TagString: Untagged
@@ -542,7 +544,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1877795065}
-  m_Mesh: {fileID: 1592803079}
+  m_Mesh: {fileID: 1861732615}
 --- !u!4 &1877795069
 Transform:
   m_ObjectHideFlags: 0
@@ -554,7 +556,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -589,6 +591,41 @@ MonoBehaviour:
   computeShader: {fileID: 7200000, guid: caa182cba3568ca4baf54e42c1278dd7, type: 3}
   damping: 0.997
   waveVisualizerMaterial: {fileID: 2100000, guid: 27085ffbc58578644a4413ab0389e617, type: 2}
+--- !u!64 &1877795072
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1877795065}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 1861732615}
+--- !u!114 &1877795073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1877795065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 906a040b92e2a4748bae94ab45e2d820, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  planeMeshAnimator: {fileID: 1877795071}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
