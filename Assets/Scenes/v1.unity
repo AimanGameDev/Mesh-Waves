@@ -484,9 +484,9 @@ GameObject:
   - component: {fileID: 1877795069}
   - component: {fileID: 1877795068}
   - component: {fileID: 1877795067}
+  - component: {fileID: 1877795072}
   - component: {fileID: 1877795070}
   - component: {fileID: 1877795071}
-  - component: {fileID: 1877795072}
   - component: {fileID: 1877795073}
   m_Layer: 0
   m_Name: Plane
