@@ -38,7 +38,6 @@ public class MeshWaveController : MonoBehaviour
     private List<int> m_disturbedVertexIndices;
     private List<int> m_disturbedVertexIndicesProcessing;
     private NativeArray<int> m_adjacentVertexIndices;
-    private NativeArray<float3> m_vertices;
 
     private void Awake()
     {
@@ -54,12 +53,8 @@ public class MeshWaveController : MonoBehaviour
         m_disturbedVertexIndices = new List<int>(Info.MAX_DISTURBED_VERTEX_COUNT);
         m_disturbedVertexIndicesProcessing = new List<int>(Info.MAX_DISTURBED_VERTEX_COUNT);
         m_adjacentVertexIndices = new NativeArray<int>(m_vertexCount * Info.ADJACENT_INDICES_BUFFER_SIZE, Allocator.Persistent);
-        m_vertices = new NativeArray<float3>(m_vertexCount, Allocator.Persistent);
 
-        for (int i = 0; i < m_vertexCount; i++)
-            m_vertices[i] = m_mesh.vertices[i];
-
-        MeshUtils.GenerateAdjacentVertexIndicesBuffer(m_vertices, ref m_adjacentVertexIndices, Info.ADJACENT_INDICES_BUFFER_SIZE);
+        MeshUtils.GenerateAdjacentVertexIndices(in m_mesh, ref m_adjacentVertexIndices, Info.ADJACENT_INDICES_BUFFER_SIZE);
         m_adjacentVertexIndicesBuffer.SetData(m_adjacentVertexIndices);
 
         m_kernelHandle = m_computeShader.FindKernel(Info.CS_MAIN_KERNEL);
@@ -137,7 +132,6 @@ public class MeshWaveController : MonoBehaviour
     private void OnDestroy()
     {
         m_adjacentVertexIndices.Dispose();
-        m_vertices.Dispose();
 
         m_adjacentVertexIndicesBuffer?.Release();
         m_inputBuffer?.Release();

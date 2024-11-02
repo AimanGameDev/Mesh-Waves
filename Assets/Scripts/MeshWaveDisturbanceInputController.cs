@@ -9,9 +9,11 @@ public class MeshWaveDisturbanceInputController : MonoBehaviour
     private Transform meshTransform;
 
     public MeshWaveController meshWaveController;
+    public MeshAnimator meshAnimator;
 
     void Start()
     {
+        meshAnimator = GetComponent<MeshAnimator>();
         meshWaveController = GetComponent<MeshWaveController>();
         mesh = GetComponent<MeshFilter>().mesh;
         vertices = mesh.vertices;
@@ -54,7 +56,8 @@ public class MeshWaveDisturbanceInputController : MonoBehaviour
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
                 int closestVertex = FindClosestVertexWorld(hit.point);
-                meshWaveController.AddDisturbedVertex(closestVertex);
+                meshWaveController?.AddDisturbedVertex(closestVertex);
+                meshAnimator?.AddDisturbedVertex(closestVertex);
             }
         }
     }
