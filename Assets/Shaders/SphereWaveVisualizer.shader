@@ -29,6 +29,7 @@ Shader "Custom/SphereWaveVisualizer"
         float4 _ColorB;
         float _WaveHeight;
         float _AmplitudeMultiplier;
+        float3 _SphereCenter;
 
         struct Input
         {
@@ -58,10 +59,12 @@ Shader "Custom/SphereWaveVisualizer"
             UNITY_INITIALIZE_OUTPUT(Input, o);
             
             #ifdef SHADER_API_D3D11
-                const float amplitude = amplitudes[v.vertexID];
-                v.vertex.y += amplitude * _WaveHeight;
-                
-                v.color = lerp(_ColorA, _ColorB, amplitude * _AmplitudeMultiplier);
+                float amplitude = amplitudes[v.vertexID];
+                float3 directionFromCenter = normalize(v.vertex.xyz - _SphereCenter);
+                v.vertex.xyz += directionFromCenter * (amplitude * _WaveHeight);
+                v.normal = normalize(v.normal + directionFromCenter * amplitude);
+                float heightColor = (amplitude * _AmplitudeMultiplier + 1.0) * 0.5;
+                v.color = lerp(_ColorA, _ColorB, heightColor);
             #else
                 v.color = _ColorA;
             #endif
