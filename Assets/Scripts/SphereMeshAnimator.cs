@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(MeshFilter))]
-public class PlaneMeshAnimator : MeshAnimator
+public class SphereMeshAnimator : MeshAnimator
 {
     public ComputeShader computeShader;
     [Range(0.0f, 1.0f)]

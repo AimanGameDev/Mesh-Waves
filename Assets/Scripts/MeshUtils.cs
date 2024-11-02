@@ -6,7 +6,7 @@ public class MeshUtils : MonoBehaviour
     private Vector3[] vertices;
     private Transform meshTransform;
 
-    public PlaneMeshAnimator planeMeshAnimator;
+    public MeshAnimator meshAnimator;
 
     void Start()
     {
@@ -51,7 +51,7 @@ public class MeshUtils : MonoBehaviour
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
                 int closestVertex = FindClosestVertexWorld(hit.point);
-                planeMeshAnimator.AddDisturbedVertex(closestVertex);
+                meshAnimator.AddDisturbedVertex(closestVertex);
             }
         }
     }
