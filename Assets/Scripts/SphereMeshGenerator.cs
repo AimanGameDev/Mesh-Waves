@@ -5,7 +5,6 @@ using System.Collections.Generic;
 public class SphereMeshGenerator : MeshGenerator
 {
     public float radius = 1f;
-    [Range(0, 4)]
     public int subdivisions = 2;
 
     private Dictionary<Vector3, int> vertexMap = new Dictionary<Vector3, int>();

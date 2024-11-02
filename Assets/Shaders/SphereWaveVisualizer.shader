@@ -63,7 +63,7 @@ Shader "Custom/SphereWaveVisualizer"
                 float3 directionFromCenter = normalize(v.vertex.xyz - _SphereCenter);
                 v.vertex.xyz += directionFromCenter * (amplitude * _WaveHeight);
                 v.normal = normalize(v.normal + directionFromCenter * amplitude);
-                float heightColor = (amplitude * _AmplitudeMultiplier + 1.0) * 0.5;
+                float heightColor = amplitude * _AmplitudeMultiplier;
                 v.color = lerp(_ColorA, _ColorB, heightColor);
             #else
                 v.color = _ColorA;
