@@ -1,0 +1,148 @@
+using System.Collections.Generic;
+using Unity.Mathematics;
+using Unity.Collections;
+using UnityEngine;
+using Info = MeshWaveInfo;
+
+[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
+public class MeshWaveController : MonoBehaviour
+{
+    public enum InputBufferStep
+    {
+        None,
+        UpdateDisturbances,
+        ResetDisturbances,
+    }
+
+    [Range(0.0f, 1.0f)]
+    public float damping = 0.95f;
+
+    [SerializeField]
+    private ComputeShader m_computeShader;
+    [SerializeField]
+    private Material m_waveVisualizerMaterial;
+
+    private ComputeBuffer m_adjacentVertexIndicesBuffer;
+    private ComputeBuffer m_inputBuffer;
+    private ComputeBuffer m_currentBuffer;
+    private ComputeBuffer m_previousBuffer;
+    private ComputeBuffer m_visualizerBuffer;
+    private Mesh m_mesh;
+
+    private int m_kernelHandle;
+    private uint m_threadGroupSize;
+    private int m_vertexCount;
+    private int m_currentBufferSelector;
+    private InputBufferStep m_inputBufferStep;
+    private float[] m_inputAmplitudes;
+    private List<int> m_disturbedVertexIndices;
+    private List<int> m_disturbedVertexIndicesProcessing;
+    private NativeArray<int> m_adjacentVertexIndices;
+    private NativeArray<float3> m_vertices;
+
+    private void Awake()
+    {
+        m_mesh = GetComponent<MeshFilter>().mesh;
+        m_vertexCount = m_mesh.vertexCount;
+
+        m_adjacentVertexIndicesBuffer = new ComputeBuffer(m_vertexCount * Info.ADJACENT_INDICES_BUFFER_SIZE, sizeof(int));
+        m_inputBuffer = new ComputeBuffer(m_vertexCount, sizeof(float));
+        m_currentBuffer = new ComputeBuffer(m_vertexCount, sizeof(float));
+        m_previousBuffer = new ComputeBuffer(m_vertexCount, sizeof(float));
+        m_visualizerBuffer = new ComputeBuffer(m_vertexCount, sizeof(float));
+
+        m_disturbedVertexIndices = new List<int>(Info.MAX_DISTURBED_VERTEX_COUNT);
+        m_disturbedVertexIndicesProcessing = new List<int>(Info.MAX_DISTURBED_VERTEX_COUNT);
+        m_adjacentVertexIndices = new NativeArray<int>(m_vertexCount * Info.ADJACENT_INDICES_BUFFER_SIZE, Allocator.Persistent);
+        m_vertices = new NativeArray<float3>(m_vertexCount, Allocator.Persistent);
+
+        for (int i = 0; i < m_vertexCount; i++)
+            m_vertices[i] = m_mesh.vertices[i];
+
+        MeshUtils.GenerateAdjacentVertexIndicesBuffer(m_vertices, ref m_adjacentVertexIndices, Info.ADJACENT_INDICES_BUFFER_SIZE);
+        m_adjacentVertexIndicesBuffer.SetData(m_adjacentVertexIndices);
+
+        m_kernelHandle = m_computeShader.FindKernel(Info.CS_MAIN_KERNEL);
+        m_computeShader.GetKernelThreadGroupSizes(m_kernelHandle, out m_threadGroupSize, out _, out _);
+
+        m_computeShader.SetBuffer(m_kernelHandle, Info.Buffers.ADJACENT_INDICES_BUFFER, m_adjacentVertexIndicesBuffer);
+        m_computeShader.SetBuffer(m_kernelHandle, Info.Buffers.INPUT_BUFFER, m_inputBuffer);
+        m_computeShader.SetBuffer(m_kernelHandle, Info.Buffers.CURRENT_BUFFER, m_currentBuffer);
+        m_computeShader.SetBuffer(m_kernelHandle, Info.Buffers.PREVIOUS_BUFFER, m_previousBuffer);
+        m_computeShader.SetBuffer(m_kernelHandle, Info.Buffers.VISUALIZER_BUFFER, m_visualizerBuffer);
+        m_computeShader.SetInt(Info.Parameters.CURRENT_BUFFER, m_currentBufferSelector);
+        m_computeShader.SetFloat(Info.Parameters.DAMPING, damping);
+        m_computeShader.SetInt(Info.Parameters.VERTEX_COUNT, m_vertexCount);
+
+        m_waveVisualizerMaterial.SetBuffer(Info.Buffers.MATERIAL_AMPLITUDES, m_visualizerBuffer);
+        m_waveVisualizerMaterial.SetVector(Info.Parameters.SPHERE_CENTER, transform.position);
+
+        m_inputAmplitudes = new float[m_vertexCount];
+
+        m_inputBufferStep = InputBufferStep.None;
+    }
+
+    private void Update()
+    {
+        if(m_inputBufferStep == InputBufferStep.None)
+        {
+            if(m_disturbedVertexIndices.Count > 0)
+            {
+                m_inputBufferStep = InputBufferStep.UpdateDisturbances;
+                for (int i = 0; i < m_disturbedVertexIndices.Count; i++)
+                    m_disturbedVertexIndicesProcessing.Add(m_disturbedVertexIndices[i]);
+
+                m_disturbedVertexIndices.Clear();
+            }
+        }
+        else if(m_inputBufferStep == InputBufferStep.UpdateDisturbances)
+        {
+            for (int i = 0; i < m_disturbedVertexIndicesProcessing.Count; i++)
+                m_inputAmplitudes[m_disturbedVertexIndicesProcessing[i]] = 1f;
+
+            m_inputBuffer.SetData(m_inputAmplitudes);
+            m_inputBufferStep = InputBufferStep.ResetDisturbances;
+        }
+        else if(m_inputBufferStep == InputBufferStep.ResetDisturbances)
+        {
+            for (int i = 0; i < m_disturbedVertexIndicesProcessing.Count; i++)
+                m_inputAmplitudes[m_disturbedVertexIndicesProcessing[i]] = 0f;
+
+            m_disturbedVertexIndicesProcessing.Clear();
+            m_inputBuffer.SetData(m_inputAmplitudes);
+            m_inputBufferStep = InputBufferStep.None;
+        }
+
+        m_computeShader.SetFloat(Info.Parameters.DAMPING, damping);
+        m_computeShader.SetInt(Info.Parameters.CURRENT_BUFFER, m_currentBufferSelector);
+        m_currentBufferSelector = 1 - m_currentBufferSelector;
+    
+        int threadGroups = Mathf.CeilToInt(m_vertexCount / (float)m_threadGroupSize);
+        m_computeShader.Dispatch(m_kernelHandle, threadGroups, 1, 1);
+
+        m_waveVisualizerMaterial.SetVector(Info.Parameters.SPHERE_CENTER, transform.position);
+    }
+
+    public void AddDisturbedVertex(int vertexIndex)
+    {
+        if (m_disturbedVertexIndices.Count >= Info.MAX_DISTURBED_VERTEX_COUNT)
+            return;
+
+        if (vertexIndex < 0 || vertexIndex >= m_vertexCount)
+            return;
+
+        m_disturbedVertexIndices.Add(vertexIndex);
+    }
+
+    private void OnDestroy()
+    {
+        m_adjacentVertexIndices.Dispose();
+        m_vertices.Dispose();
+
+        m_adjacentVertexIndicesBuffer?.Release();
+        m_inputBuffer?.Release();
+        m_currentBuffer?.Release();
+        m_previousBuffer?.Release();
+        m_visualizerBuffer?.Release();
+    }
+}

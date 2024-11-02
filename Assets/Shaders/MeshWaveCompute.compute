@@ -1,0 +1,59 @@
+#pragma kernel CSMain
+
+// Buffers
+StructuredBuffer<int> adjacentIndicesBuffer;
+StructuredBuffer<float> inputBuffer;
+RWStructuredBuffer<float> previousBuffer;
+RWStructuredBuffer<float> currentBuffer;
+RWStructuredBuffer<float> visualizerBuffer;
+
+// Parameters
+float _Damping;
+uint _CurrentBuffer;
+uint _VertexCount;
+
+[numthreads(64,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+
+    uint adjacentAmplitudeIndex = id.x * 7;
+    float adjacentAmplitudesSum = 0.0f;
+    float currentAmplitude = 0.0f;
+
+    if (_CurrentBuffer == 0)
+    {
+        currentAmplitude = currentBuffer[id.x];
+        for (int i = 1; i <= 6; i++)
+        {
+            int neighborIndex = adjacentIndicesBuffer[adjacentAmplitudeIndex + i];
+            float neighborAmplitude = neighborIndex == -1 ? 0.0f : previousBuffer[neighborIndex];
+            adjacentAmplitudesSum += neighborAmplitude;
+        }
+    }
+    else
+    {
+        currentAmplitude = previousBuffer[id.x];
+        for (int i = 1; i <= 6; i++)
+        {
+            int neighborIndex = adjacentIndicesBuffer[adjacentAmplitudeIndex + i];
+            float neighborAmplitude = neighborIndex == -1 ? 0.0f : currentBuffer[neighborIndex];
+            adjacentAmplitudesSum += neighborAmplitude;
+        }
+    }
+
+    float newAmplitude = inputBuffer[id.x] + (adjacentAmplitudesSum / 3.0) - currentAmplitude;
+    newAmplitude *= _Damping;
+    newAmplitude = clamp(newAmplitude, -1.0f, 1.0f);
+
+    if (_CurrentBuffer == 0)
+    {
+        currentBuffer[id.x] = newAmplitude;
+    }
+    else
+    {
+        previousBuffer[id.x] = newAmplitude;
+    }
+    
+    visualizerBuffer[id.x] = newAmplitude;
+}
