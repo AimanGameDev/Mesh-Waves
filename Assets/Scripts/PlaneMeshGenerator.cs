@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-public class PlaneMeshGenerator : MonoBehaviour
+public class PlaneMeshGenerator : MeshGenerator
 {
     public int width;
     public int height;
@@ -58,28 +58,5 @@ public class PlaneMeshGenerator : MonoBehaviour
         mesh.RecalculateBounds();
 
         GetComponent<MeshRenderer>().material = material;
-    }
-
-    [ContextMenu("Show Vertices")]
-    void ShowVertices()
-    {
-        var vertices = GetComponent<MeshFilter>().mesh.vertices;
-        foreach (var vertex in vertices)
-        {
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.transform.position = vertex;
-            cube.transform.localScale = Vector3.one * 0.1f;
-            cube.transform.parent = transform;
-        }
-        Debug.Log($"Vertices: {vertices.Length}");
-    }
-
-    [ContextMenu("Destroy Vertices")]
-    void DestroyVertices()
-    {
-        for (int i = transform.childCount - 1; i >= 0 ; i--)
-        {
-            DestroyImmediate(transform.GetChild(0).gameObject);
-        }
     }
 }
