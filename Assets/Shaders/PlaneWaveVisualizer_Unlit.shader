@@ -1,4 +1,4 @@
-Shader "Custom/WaveVisualizer_Unlit"
+Shader "Custom/PlaneWaveVisualizer_Unlit"
 {
     Properties
     {
