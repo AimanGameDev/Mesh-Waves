@@ -3,7 +3,7 @@ using Unity.Collections;
 using UnityEngine;
 using Info = MeshWaveInfo;
 
-[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
+[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider))]
 public class MeshWaveController : MonoBehaviour
 {
     public enum InputBufferStep
@@ -55,6 +55,7 @@ public class MeshWaveController : MonoBehaviour
         m_mesh = meshFilter.mesh;
         MeshUtils.ConnectVerticesAtSamePosition(ref m_mesh);
         meshFilter.mesh = m_mesh;
+        GetComponent<MeshCollider>().sharedMesh = m_mesh;
 
         m_vertexCount = m_mesh.vertexCount;
 
@@ -101,9 +102,9 @@ public class MeshWaveController : MonoBehaviour
 
     private void Update()
     {
-        if(m_inputBufferStep == InputBufferStep.None)
+        if (m_inputBufferStep == InputBufferStep.None)
         {
-            if(m_disturbedVertexIndices.Count > 0)
+            if (m_disturbedVertexIndices.Count > 0)
             {
                 m_inputBufferStep = InputBufferStep.UpdateDisturbances;
                 for (int i = 0; i < m_disturbedVertexIndices.Count; i++)
@@ -112,7 +113,7 @@ public class MeshWaveController : MonoBehaviour
                 m_disturbedVertexIndices.Clear();
             }
         }
-        else if(m_inputBufferStep == InputBufferStep.UpdateDisturbances)
+        else if (m_inputBufferStep == InputBufferStep.UpdateDisturbances)
         {
             for (int i = 0; i < m_disturbedVertexIndicesProcessing.Count; i++)
                 m_inputAmplitudes[m_disturbedVertexIndicesProcessing[i]] = 1f;
@@ -120,7 +121,7 @@ public class MeshWaveController : MonoBehaviour
             m_inputBuffer.SetData(m_inputAmplitudes);
             m_inputBufferStep = InputBufferStep.ResetDisturbances;
         }
-        else if(m_inputBufferStep == InputBufferStep.ResetDisturbances)
+        else if (m_inputBufferStep == InputBufferStep.ResetDisturbances)
         {
             for (int i = 0; i < m_disturbedVertexIndicesProcessing.Count; i++)
                 m_inputAmplitudes[m_disturbedVertexIndicesProcessing[i]] = 0f;
@@ -133,7 +134,7 @@ public class MeshWaveController : MonoBehaviour
         m_computeShaderInstance.SetFloat(Info.Parameters.DAMPING, damping);
         m_computeShaderInstance.SetInt(Info.Parameters.CURRENT_BUFFER, m_currentBufferSelector);
         m_currentBufferSelector = 1 - m_currentBufferSelector;
-    
+
         int threadGroups = Mathf.CeilToInt(m_vertexCount / (float)m_threadGroupSize);
         m_computeShaderInstance.Dispatch(m_kernelHandle, threadGroups, 1, 1);
 
