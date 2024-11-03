@@ -9,7 +9,7 @@ RWStructuredBuffer<float> visualizerBuffer;
 
 // Parameters
 float _Damping;
-uint _CurrentBuffer;
+uint _CurrentBufferSelector;
 uint _VertexCount;
 uint _MaxNeighbors;
 
@@ -18,42 +18,29 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= _VertexCount) return;
 
-    uint adjacentAmplitudeIndex = id.x * (_MaxNeighbors + 1);
-    float adjacentAmplitudesSum = 0.0;
-    float currentAmplitude = 0.0;
+    uint adjacentAmplitudeBaseIndex = id.x * (_MaxNeighbors + 1);
 
-    if (_CurrentBuffer == 0)
+    float currentBufferValue = currentBuffer[id.x];
+    float previousBufferValue = previousBuffer[id.x];
+    float currentAmplitude = _CurrentBufferSelector * previousBufferValue + (1.0 - _CurrentBufferSelector) * currentBufferValue;
+
+    float adjacentAmplitudesSum = 0.0;
+
+    for (uint i = 1; i <= _MaxNeighbors; i++)
     {
-        currentAmplitude = currentBuffer[id.x];
-        for (uint i = 1; i <= _MaxNeighbors; i++)
-        {
-            int neighborIndex = adjacentIndicesBuffer[adjacentAmplitudeIndex + i];
-            float neighborAmplitude = neighborIndex == -1 ? 0.0 : previousBuffer[neighborIndex];
-            adjacentAmplitudesSum += neighborAmplitude;
-        }
-    }
-    else
-    {
-        currentAmplitude = previousBuffer[id.x];
-        for (uint i = 1; i <= _MaxNeighbors; i++)
-        {
-            int neighborIndex = adjacentIndicesBuffer[adjacentAmplitudeIndex + i];
-            float neighborAmplitude = neighborIndex == -1 ? 0.0 : currentBuffer[neighborIndex];
-            adjacentAmplitudesSum += neighborAmplitude;
-        }
+        int neighborIndex = adjacentIndicesBuffer[adjacentAmplitudeBaseIndex + i];
+        float isValid = (float)(neighborIndex != -1);
+        neighborIndex = neighborIndex * isValid + id.x * (1.0 - isValid);
+        float neighborAmplitude = _CurrentBufferSelector == 0 ? previousBuffer[neighborIndex] : currentBuffer[neighborIndex];
+        neighborAmplitude *= isValid;
+        adjacentAmplitudesSum += neighborAmplitude;
     }
 
     float newAmplitude = inputBuffer[id.x] + (adjacentAmplitudesSum / (_MaxNeighbors / 2.0)) - currentAmplitude;
     newAmplitude *= _Damping;
 
-    if (_CurrentBuffer == 0)
-    {
-        currentBuffer[id.x] = newAmplitude;
-    }
-    else
-    {
-        previousBuffer[id.x] = newAmplitude;
-    }
-    
+    currentBuffer[id.x] = _CurrentBufferSelector * currentBufferValue + (1.0 - _CurrentBufferSelector) * newAmplitude;
+    previousBuffer[id.x] = _CurrentBufferSelector * newAmplitude + (1.0 - _CurrentBufferSelector) * previousBufferValue;
+
     visualizerBuffer[id.x] = newAmplitude;
 }

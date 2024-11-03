@@ -82,7 +82,7 @@ public class MeshWaveController : MonoBehaviour
         m_computeShaderInstance.SetBuffer(m_kernelHandle, Info.Buffers.CURRENT_BUFFER, m_currentBuffer);
         m_computeShaderInstance.SetBuffer(m_kernelHandle, Info.Buffers.PREVIOUS_BUFFER, m_previousBuffer);
         m_computeShaderInstance.SetBuffer(m_kernelHandle, Info.Buffers.VISUALIZER_BUFFER, m_visualizerBuffer);
-        m_computeShaderInstance.SetInt(Info.Parameters.CURRENT_BUFFER, m_currentBufferSelector);
+        m_computeShaderInstance.SetInt(Info.Parameters.CURRENT_BUFFER_SELECTOR, m_currentBufferSelector);
         m_computeShaderInstance.SetFloat(Info.Parameters.DAMPING, damping);
         m_computeShaderInstance.SetInt(Info.Parameters.VERTEX_COUNT, m_vertexCount);
         m_computeShaderInstance.SetInt(Info.Parameters.MAX_NEIGHBORS, maxNeighboringVertices);
@@ -132,7 +132,7 @@ public class MeshWaveController : MonoBehaviour
         }
 
         m_computeShaderInstance.SetFloat(Info.Parameters.DAMPING, damping);
-        m_computeShaderInstance.SetInt(Info.Parameters.CURRENT_BUFFER, m_currentBufferSelector);
+        m_computeShaderInstance.SetInt(Info.Parameters.CURRENT_BUFFER_SELECTOR, m_currentBufferSelector);
         m_currentBufferSelector = 1 - m_currentBufferSelector;
 
         int threadGroups = Mathf.CeilToInt(m_vertexCount / (float)m_threadGroupSize);
