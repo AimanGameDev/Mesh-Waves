@@ -19,7 +19,10 @@ public readonly struct MeshWaveInfo
         public const string VERTEX_COUNT = "_VertexCount";
         public const string CENTER_OF_REPULSION = "_CenterOfRepulsion";
         public const string CURRENT_BUFFER_SELECTOR = "_CurrentBufferSelector";
-        public const string COLOR_SHARPNESS = "_ColorSharpness";
         public const string MAX_NEIGHBORS = "_MaxNeighbors";
+        public const string MIN_WAVE_HEIGHT = "_MinWaveHeight";
+        public const string MAX_WAVE_HEIGHT = "_MaxWaveHeight";
+        public const string WAVE_HEIGHT = "_WaveHeight";
+        public const string COLOR_SHARPNESS = "_ColorSharpness";
     }
 }

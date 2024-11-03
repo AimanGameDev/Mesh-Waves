@@ -13,8 +13,7 @@ public class MeshWaveController : MonoBehaviour
         ResetDisturbances,
     }
 
-    [Range(0.0f, 1.0f)]
-    public float damping = 0.95f;
+    public float damping => MeshWaveConfiguration.Instance.configuration.damping;
     public bool useObjectCenterAsCenterOfRepulsion;
     public int maxNeighboringVertices;
 
@@ -45,8 +44,6 @@ public class MeshWaveController : MonoBehaviour
 
     private void Awake()
     {
-        Application.targetFrameRate = 60;
-
         m_computeShaderInstance = Instantiate(m_computeShaderTemplate);
         m_waveVisualizerMaterialInstance = Instantiate(m_waveVisualizerMaterialTemplate);
         GetComponent<MeshRenderer>().material = m_waveVisualizerMaterialInstance;
@@ -88,7 +85,6 @@ public class MeshWaveController : MonoBehaviour
         m_computeShaderInstance.SetInt(Info.Parameters.MAX_NEIGHBORS, maxNeighboringVertices);
 
         m_waveVisualizerMaterialInstance.SetBuffer(Info.Buffers.MATERIAL_AMPLITUDES, m_visualizerBuffer);
-        m_waveVisualizerMaterialInstance.SetVector(Info.Parameters.CENTER_OF_REPULSION, GetCenterOfRepulsion());
 
         m_inputAmplitudes = new float[m_vertexCount];
 
@@ -139,6 +135,10 @@ public class MeshWaveController : MonoBehaviour
         m_computeShaderInstance.Dispatch(m_kernelHandle, threadGroups, 1, 1);
 
         m_waveVisualizerMaterialInstance.SetVector(Info.Parameters.CENTER_OF_REPULSION, GetCenterOfRepulsion());
+        m_waveVisualizerMaterialInstance.SetFloat(Info.Parameters.WAVE_HEIGHT, MeshWaveConfiguration.Instance.configuration.waveHeight);
+        m_waveVisualizerMaterialInstance.SetFloat(Info.Parameters.MIN_WAVE_HEIGHT, MeshWaveConfiguration.Instance.configuration.minWaveHeight);
+        m_waveVisualizerMaterialInstance.SetFloat(Info.Parameters.MAX_WAVE_HEIGHT, MeshWaveConfiguration.Instance.configuration.maxWaveHeight);
+        m_waveVisualizerMaterialInstance.SetFloat(Info.Parameters.COLOR_SHARPNESS, MeshWaveConfiguration.Instance.configuration.colorSharpness);
     }
 
     public void AddDisturbedVertex(int vertexIndex)
