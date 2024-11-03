@@ -57,12 +57,18 @@ Shader "Custom/MeshWaveVisualizer"
         void vert(inout appdata_full2 v, out Input o)
         {
             UNITY_INITIALIZE_OUTPUT(Input, o);
-            
+
             #ifdef SHADER_API_D3D11
                 float amplitude = amplitudes[v.vertexID];
-                float3 directionFromCenter = normalize(v.vertex.xyz - _CenterOfRepulsion);
-                v.vertex.xyz += directionFromCenter * (amplitude * _WaveHeight);
-                v.normal = normalize(v.normal + directionFromCenter * amplitude);
+                float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+                float3 directionFromCenter = normalize(worldPos - _CenterOfRepulsion);
+                worldPos += directionFromCenter * (amplitude * _WaveHeight);
+                v.vertex = mul(unity_WorldToObject, float4(worldPos, 1.0));
+                
+                float3 worldNormal = normalize(mul(unity_ObjectToWorld, float4(v.normal, 0.0)).xyz);
+                worldNormal = normalize(worldNormal + directionFromCenter * amplitude);
+                v.normal = normalize(mul(unity_WorldToObject, float4(worldNormal, 0.0)).xyz);
+                
                 float heightColor = amplitude * _AmplitudeMultiplier;
                 v.color = lerp(_ColorA, _ColorB, heightColor);
             #else
