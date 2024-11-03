@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(MeshWaveController))]
 public class MeshWaveDisturbanceInputController : MonoBehaviour
 {
     private Mesh m_mesh;
@@ -7,11 +8,9 @@ public class MeshWaveDisturbanceInputController : MonoBehaviour
     private Transform m_meshTransform;
 
     private MeshWaveController m_meshWaveController;
-    private MeshAnimator m_meshAnimator;
 
     void Start()
     {
-        m_meshAnimator = GetComponent<MeshAnimator>();
         m_meshWaveController = GetComponent<MeshWaveController>();
         m_mesh = GetComponent<MeshFilter>().mesh;
         m_vertices = m_mesh.vertices;
@@ -50,11 +49,10 @@ public class MeshWaveDisturbanceInputController : MonoBehaviour
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
-                if(hit.collider.gameObject == gameObject)
+                if (hit.collider.gameObject == gameObject)
                 {
                     int closestVertex = FindClosestVertexWorld(hit.point);
                     m_meshWaveController?.AddDisturbedVertex(closestVertex);
-                    m_meshAnimator?.AddDisturbedVertex(closestVertex);
                 }
             }
         }
