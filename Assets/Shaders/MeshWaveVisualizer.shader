@@ -8,7 +8,7 @@ Shader "Custom/MeshWaveVisualizer"
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
         _WaveHeight ("Wave Height", Float) = 1.0
-        _AmplitudeMultiplier ("Amplitude Multiplier", Float) = 1.0
+        _ColorSharpness ("Color Sharpness", Float) = 1.0
     }
     SubShader
     {
@@ -28,7 +28,7 @@ Shader "Custom/MeshWaveVisualizer"
         float4 _ColorA;
         float4 _ColorB;
         float _WaveHeight;
-        float _AmplitudeMultiplier;
+        float _ColorSharpness;
         float3 _CenterOfRepulsion;
 
         struct Input
@@ -60,6 +60,7 @@ Shader "Custom/MeshWaveVisualizer"
 
             #ifdef SHADER_API_D3D11
                 float amplitude = amplitudes[v.vertexID];
+                amplitude = clamp(amplitude, -1.0, 1.0);
                 float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
                 float3 directionFromCenter = normalize(worldPos - _CenterOfRepulsion);
                 worldPos += directionFromCenter * (amplitude * _WaveHeight);
@@ -69,7 +70,7 @@ Shader "Custom/MeshWaveVisualizer"
                 worldNormal = normalize(worldNormal + directionFromCenter * amplitude);
                 v.normal = normalize(mul(unity_WorldToObject, float4(worldNormal, 0.0)).xyz);
                 
-                float heightColor = amplitude * _AmplitudeMultiplier;
+                float heightColor = amplitude * _ColorSharpness;
                 v.color = lerp(_ColorA, _ColorB, heightColor);
             #else
                 v.color = _ColorA;
