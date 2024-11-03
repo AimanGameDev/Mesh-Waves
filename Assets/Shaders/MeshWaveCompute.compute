@@ -11,40 +11,41 @@ RWStructuredBuffer<float> visualizerBuffer;
 float _Damping;
 uint _CurrentBuffer;
 uint _VertexCount;
+uint _MaxNeighbors;
 
 [numthreads(64,1,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= _VertexCount) return;
 
-    uint adjacentAmplitudeIndex = id.x * 7;
-    float adjacentAmplitudesSum = 0.0f;
-    float currentAmplitude = 0.0f;
+    uint adjacentAmplitudeIndex = id.x * (_MaxNeighbors + 1);
+    float adjacentAmplitudesSum = 0f;
+    float currentAmplitude = 0f;
 
     if (_CurrentBuffer == 0)
     {
         currentAmplitude = currentBuffer[id.x];
-        for (int i = 1; i <= 6; i++)
+        for (int i = 1; i <= _MaxNeighbors; i++)
         {
             int neighborIndex = adjacentIndicesBuffer[adjacentAmplitudeIndex + i];
-            float neighborAmplitude = neighborIndex == -1 ? 0.0f : previousBuffer[neighborIndex];
+            float neighborAmplitude = neighborIndex == -1 ? 0f : previousBuffer[neighborIndex];
             adjacentAmplitudesSum += neighborAmplitude;
         }
     }
     else
     {
         currentAmplitude = previousBuffer[id.x];
-        for (int i = 1; i <= 6; i++)
+        for (int i = 1; i <= _MaxNeighbors; i++)
         {
             int neighborIndex = adjacentIndicesBuffer[adjacentAmplitudeIndex + i];
-            float neighborAmplitude = neighborIndex == -1 ? 0.0f : currentBuffer[neighborIndex];
+            float neighborAmplitude = neighborIndex == -1 ? 0f : currentBuffer[neighborIndex];
             adjacentAmplitudesSum += neighborAmplitude;
         }
     }
 
-    float newAmplitude = inputBuffer[id.x] + (adjacentAmplitudesSum / 3.0) - currentAmplitude;
+    float newAmplitude = inputBuffer[id.x] + (adjacentAmplitudesSum / (_MaxNeighbors * 0.5f)) - currentAmplitude;
     newAmplitude *= _Damping;
-    newAmplitude = clamp(newAmplitude, -1.0f, 1.0f);
+    newAmplitude = clamp(newAmplitude, -1f, 1f);
 
     if (_CurrentBuffer == 0)
     {

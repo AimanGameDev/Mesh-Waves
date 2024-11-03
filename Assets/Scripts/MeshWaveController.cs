@@ -16,6 +16,8 @@ public class MeshWaveController : MonoBehaviour
 
     [Range(0.0f, 1.0f)]
     public float damping = 0.95f;
+    public bool useObjectCenterAsCenterOfRepulsion;
+    public int maxNeighboringVertices;
 
     [SerializeField]
     private ComputeShader m_computeShader;
@@ -38,13 +40,18 @@ public class MeshWaveController : MonoBehaviour
     private List<int> m_disturbedVertexIndices;
     private List<int> m_disturbedVertexIndicesProcessing;
     private NativeArray<int> m_adjacentVertexIndices;
+    private Vector3 m_centerOfRepulsionBasedOnAverageNormals;
 
     private void Awake()
     {
+        Application.targetFrameRate = 60;
+
         m_mesh = GetComponent<MeshFilter>().mesh;
         m_vertexCount = m_mesh.vertexCount;
 
-        m_adjacentVertexIndicesBuffer = new ComputeBuffer(m_vertexCount * Info.ADJACENT_INDICES_BUFFER_SIZE, sizeof(int));
+        maxNeighboringVertices = Mathf.Clamp(maxNeighboringVertices, 4, 8);
+        var adjacentIndicesBufferSize = maxNeighboringVertices + 1;
+        m_adjacentVertexIndicesBuffer = new ComputeBuffer(m_vertexCount * adjacentIndicesBufferSize, sizeof(int));
         m_inputBuffer = new ComputeBuffer(m_vertexCount, sizeof(float));
         m_currentBuffer = new ComputeBuffer(m_vertexCount, sizeof(float));
         m_previousBuffer = new ComputeBuffer(m_vertexCount, sizeof(float));
@@ -52,9 +59,9 @@ public class MeshWaveController : MonoBehaviour
 
         m_disturbedVertexIndices = new List<int>(Info.MAX_DISTURBED_VERTEX_COUNT);
         m_disturbedVertexIndicesProcessing = new List<int>(Info.MAX_DISTURBED_VERTEX_COUNT);
-        m_adjacentVertexIndices = new NativeArray<int>(m_vertexCount * Info.ADJACENT_INDICES_BUFFER_SIZE, Allocator.Persistent);
+        m_adjacentVertexIndices = new NativeArray<int>(m_vertexCount * adjacentIndicesBufferSize, Allocator.Persistent);
 
-        MeshUtils.GenerateAdjacentVertexIndices(in m_mesh, ref m_adjacentVertexIndices, Info.ADJACENT_INDICES_BUFFER_SIZE);
+        MeshUtils.GenerateAdjacentVertexIndices(in m_mesh, ref m_adjacentVertexIndices, adjacentIndicesBufferSize);
         m_adjacentVertexIndicesBuffer.SetData(m_adjacentVertexIndices);
 
         m_kernelHandle = m_computeShader.FindKernel(Info.CS_MAIN_KERNEL);
@@ -68,13 +75,19 @@ public class MeshWaveController : MonoBehaviour
         m_computeShader.SetInt(Info.Parameters.CURRENT_BUFFER, m_currentBufferSelector);
         m_computeShader.SetFloat(Info.Parameters.DAMPING, damping);
         m_computeShader.SetInt(Info.Parameters.VERTEX_COUNT, m_vertexCount);
+        m_computeShader.SetInt(Info.Parameters.MAX_NEIGHBORS, maxNeighboringVertices);
 
         m_waveVisualizerMaterial.SetBuffer(Info.Buffers.MATERIAL_AMPLITUDES, m_visualizerBuffer);
-        m_waveVisualizerMaterial.SetVector(Info.Parameters.SPHERE_CENTER, transform.position);
+        m_waveVisualizerMaterial.SetVector(Info.Parameters.CENTER_OF_REPULSION, GetCenterOfRepulsion());
 
         m_inputAmplitudes = new float[m_vertexCount];
 
         m_inputBufferStep = InputBufferStep.None;
+
+        for (int i = 0; i < m_mesh.normals.Length; i++)
+            m_centerOfRepulsionBasedOnAverageNormals += m_mesh.normals[i];
+
+        m_centerOfRepulsionBasedOnAverageNormals /= m_mesh.normals.Length;
     }
 
     private void Update()
@@ -115,7 +128,7 @@ public class MeshWaveController : MonoBehaviour
         int threadGroups = Mathf.CeilToInt(m_vertexCount / (float)m_threadGroupSize);
         m_computeShader.Dispatch(m_kernelHandle, threadGroups, 1, 1);
 
-        m_waveVisualizerMaterial.SetVector(Info.Parameters.SPHERE_CENTER, transform.position);
+        m_waveVisualizerMaterial.SetVector(Info.Parameters.CENTER_OF_REPULSION, GetCenterOfRepulsion());
     }
 
     public void AddDisturbedVertex(int vertexIndex)
@@ -138,5 +151,10 @@ public class MeshWaveController : MonoBehaviour
         m_currentBuffer?.Release();
         m_previousBuffer?.Release();
         m_visualizerBuffer?.Release();
+    }
+
+    private Vector3 GetCenterOfRepulsion()
+    {
+        return useObjectCenterAsCenterOfRepulsion ? transform.position : m_centerOfRepulsionBasedOnAverageNormals * 1000000f;
     }
 }

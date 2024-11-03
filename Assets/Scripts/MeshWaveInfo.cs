@@ -1,7 +1,5 @@
 public readonly struct MeshWaveInfo
 {
-    public const int ADJACENT_INDICES_COUNT = 6;
-    public const int ADJACENT_INDICES_BUFFER_SIZE = 7;
     public const int MAX_DISTURBED_VERTEX_COUNT = 8;
 
     public const string CS_MAIN_KERNEL = "CSMain";
@@ -19,7 +17,8 @@ public readonly struct MeshWaveInfo
     {   
         public const string DAMPING = "_Damping";
         public const string VERTEX_COUNT = "_VertexCount";
-        public const string SPHERE_CENTER = "_SphereCenter";
+        public const string CENTER_OF_REPULSION = "_CenterOfRepulsion";
         public const string CURRENT_BUFFER = "_CurrentBuffer";
+        public const string MAX_NEIGHBORS = "_MaxNeighbors";
     }
 }

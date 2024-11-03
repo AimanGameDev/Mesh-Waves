@@ -29,7 +29,7 @@ Shader "Custom/MeshWaveVisualizer"
         float4 _ColorB;
         float _WaveHeight;
         float _AmplitudeMultiplier;
-        float3 _SphereCenter;
+        float3 _CenterOfRepulsion;
 
         struct Input
         {
@@ -60,7 +60,7 @@ Shader "Custom/MeshWaveVisualizer"
             
             #ifdef SHADER_API_D3D11
                 float amplitude = amplitudes[v.vertexID];
-                float3 directionFromCenter = normalize(v.vertex.xyz - _SphereCenter);
+                float3 directionFromCenter = normalize(v.vertex.xyz - _CenterOfRepulsion);
                 v.vertex.xyz += directionFromCenter * (amplitude * _WaveHeight);
                 v.normal = normalize(v.normal + directionFromCenter * amplitude);
                 float heightColor = amplitude * _AmplitudeMultiplier;
