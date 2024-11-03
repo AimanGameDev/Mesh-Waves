@@ -19,9 +19,11 @@ public class MeshWaveController : MonoBehaviour
     public int maxNeighboringVertices;
 
     [SerializeField]
-    private ComputeShader m_computeShader;
+    private ComputeShader m_computeShaderTemplate;
+    private ComputeShader m_computeShaderInstance;
     [SerializeField]
-    private Material m_waveVisualizerMaterial;
+    private Material m_waveVisualizerMaterialTemplate;
+    private Material m_waveVisualizerMaterialInstance;
 
     private ComputeBuffer m_adjacentVertexIndicesBuffer;
     private ComputeBuffer m_inputBuffer;
@@ -45,7 +47,9 @@ public class MeshWaveController : MonoBehaviour
     {
         Application.targetFrameRate = 60;
 
-        GetComponent<MeshRenderer>().material = m_waveVisualizerMaterial;
+        m_computeShaderInstance = Instantiate(m_computeShaderTemplate);
+        m_waveVisualizerMaterialInstance = Instantiate(m_waveVisualizerMaterialTemplate);
+        GetComponent<MeshRenderer>().material = m_waveVisualizerMaterialInstance;
         m_mesh = GetComponent<MeshFilter>().mesh;
         m_vertexCount = m_mesh.vertexCount;
 
@@ -64,21 +68,21 @@ public class MeshWaveController : MonoBehaviour
         MeshUtils.GenerateAdjacentVertexIndices(in m_mesh, ref m_adjacentVertexIndices, adjacentIndicesBufferSize);
         m_adjacentVertexIndicesBuffer.SetData(m_adjacentVertexIndices);
 
-        m_kernelHandle = m_computeShader.FindKernel(Info.CS_MAIN_KERNEL);
-        m_computeShader.GetKernelThreadGroupSizes(m_kernelHandle, out m_threadGroupSize, out _, out _);
+        m_kernelHandle = m_computeShaderInstance.FindKernel(Info.CS_MAIN_KERNEL);
+        m_computeShaderInstance.GetKernelThreadGroupSizes(m_kernelHandle, out m_threadGroupSize, out _, out _);
 
-        m_computeShader.SetBuffer(m_kernelHandle, Info.Buffers.ADJACENT_INDICES_BUFFER, m_adjacentVertexIndicesBuffer);
-        m_computeShader.SetBuffer(m_kernelHandle, Info.Buffers.INPUT_BUFFER, m_inputBuffer);
-        m_computeShader.SetBuffer(m_kernelHandle, Info.Buffers.CURRENT_BUFFER, m_currentBuffer);
-        m_computeShader.SetBuffer(m_kernelHandle, Info.Buffers.PREVIOUS_BUFFER, m_previousBuffer);
-        m_computeShader.SetBuffer(m_kernelHandle, Info.Buffers.VISUALIZER_BUFFER, m_visualizerBuffer);
-        m_computeShader.SetInt(Info.Parameters.CURRENT_BUFFER, m_currentBufferSelector);
-        m_computeShader.SetFloat(Info.Parameters.DAMPING, damping);
-        m_computeShader.SetInt(Info.Parameters.VERTEX_COUNT, m_vertexCount);
-        m_computeShader.SetInt(Info.Parameters.MAX_NEIGHBORS, maxNeighboringVertices);
+        m_computeShaderInstance.SetBuffer(m_kernelHandle, Info.Buffers.ADJACENT_INDICES_BUFFER, m_adjacentVertexIndicesBuffer);
+        m_computeShaderInstance.SetBuffer(m_kernelHandle, Info.Buffers.INPUT_BUFFER, m_inputBuffer);
+        m_computeShaderInstance.SetBuffer(m_kernelHandle, Info.Buffers.CURRENT_BUFFER, m_currentBuffer);
+        m_computeShaderInstance.SetBuffer(m_kernelHandle, Info.Buffers.PREVIOUS_BUFFER, m_previousBuffer);
+        m_computeShaderInstance.SetBuffer(m_kernelHandle, Info.Buffers.VISUALIZER_BUFFER, m_visualizerBuffer);
+        m_computeShaderInstance.SetInt(Info.Parameters.CURRENT_BUFFER, m_currentBufferSelector);
+        m_computeShaderInstance.SetFloat(Info.Parameters.DAMPING, damping);
+        m_computeShaderInstance.SetInt(Info.Parameters.VERTEX_COUNT, m_vertexCount);
+        m_computeShaderInstance.SetInt(Info.Parameters.MAX_NEIGHBORS, maxNeighboringVertices);
 
-        m_waveVisualizerMaterial.SetBuffer(Info.Buffers.MATERIAL_AMPLITUDES, m_visualizerBuffer);
-        m_waveVisualizerMaterial.SetVector(Info.Parameters.CENTER_OF_REPULSION, GetCenterOfRepulsion());
+        m_waveVisualizerMaterialInstance.SetBuffer(Info.Buffers.MATERIAL_AMPLITUDES, m_visualizerBuffer);
+        m_waveVisualizerMaterialInstance.SetVector(Info.Parameters.CENTER_OF_REPULSION, GetCenterOfRepulsion());
 
         m_inputAmplitudes = new float[m_vertexCount];
 
@@ -92,6 +96,7 @@ public class MeshWaveController : MonoBehaviour
 
     private void Update()
     {
+        Debug.Log("Input Buffer Step: " + m_inputBufferStep);
         if(m_inputBufferStep == InputBufferStep.None)
         {
             if(m_disturbedVertexIndices.Count > 0)
@@ -121,14 +126,14 @@ public class MeshWaveController : MonoBehaviour
             m_inputBufferStep = InputBufferStep.None;
         }
 
-        m_computeShader.SetFloat(Info.Parameters.DAMPING, damping);
-        m_computeShader.SetInt(Info.Parameters.CURRENT_BUFFER, m_currentBufferSelector);
+        m_computeShaderInstance.SetFloat(Info.Parameters.DAMPING, damping);
+        m_computeShaderInstance.SetInt(Info.Parameters.CURRENT_BUFFER, m_currentBufferSelector);
         m_currentBufferSelector = 1 - m_currentBufferSelector;
     
         int threadGroups = Mathf.CeilToInt(m_vertexCount / (float)m_threadGroupSize);
-        m_computeShader.Dispatch(m_kernelHandle, threadGroups, 1, 1);
+        m_computeShaderInstance.Dispatch(m_kernelHandle, threadGroups, 1, 1);
 
-        m_waveVisualizerMaterial.SetVector(Info.Parameters.CENTER_OF_REPULSION, GetCenterOfRepulsion());
+        m_waveVisualizerMaterialInstance.SetVector(Info.Parameters.CENTER_OF_REPULSION, GetCenterOfRepulsion());
     }
 
     public void AddDisturbedVertex(int vertexIndex)
@@ -144,6 +149,9 @@ public class MeshWaveController : MonoBehaviour
 
     private void OnDestroy()
     {
+        Destroy(m_waveVisualizerMaterialInstance);
+        Destroy(m_computeShaderInstance);
+        
         m_adjacentVertexIndices.Dispose();
 
         m_adjacentVertexIndicesBuffer?.Release();
