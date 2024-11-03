@@ -46,10 +46,76 @@ public static class MeshUtils
 
             connectedVertices.Sort((a, b) => a.distance.CompareTo(b.distance));
 
-            for (int i = 0; i < math.min(6, connectedVertices.Count); i++)
+            for (int i = 0; i < math.min(maxEntriesPerVertex - 1, connectedVertices.Count); i++)
             {
                 adjacentVertexIndices[baseIndex + 1 + i] = connectedVertices[i].index;
             }
+        }
+    }
+
+    public static void ConnectVerticesAtSamePosition(ref Mesh mesh)
+    {
+        var vertices = mesh.vertices;
+        var triangles = mesh.triangles;
+        var normals = mesh.normals;
+        var uvs = mesh.uv;
+
+        var uniqueVertices = new Dictionary<Vector3, int>(new Vector3Comparer());
+        var vertexMapping = new int[vertices.Length];
+        var newVertices = new List<Vector3>();
+        var newNormals = new List<Vector3>();
+        var newUVs = new List<Vector2>();
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            Vector3 vertex = vertices[i];
+            if (uniqueVertices.TryGetValue(vertex, out int existingIndex))
+            {
+                vertexMapping[i] = existingIndex;
+            }
+            else
+            {
+                int newIndex = newVertices.Count;
+                uniqueVertices.Add(vertex, newIndex);
+                vertexMapping[i] = newIndex;
+
+                newVertices.Add(vertex);
+                newNormals.Add(normals[i]);
+                newUVs.Add(uvs[i]);
+            }
+        }
+
+        var newTriangles = new int[triangles.Length];
+        for (int i = 0; i < triangles.Length; i++)
+        {
+            newTriangles[i] = vertexMapping[triangles[i]];
+        }
+
+        mesh.Clear();
+        mesh.SetVertices(newVertices);
+        mesh.SetNormals(newNormals);
+        mesh.SetUVs(0, newUVs);
+        mesh.SetTriangles(newTriangles, 0);
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+    }
+
+    private class Vector3Comparer : IEqualityComparer<Vector3>
+    {
+        private const float Epsilon = 0.0001f;
+
+        public bool Equals(Vector3 a, Vector3 b)
+        {
+            return Vector3.Distance(a, b) < Epsilon;
+        }
+
+        public int GetHashCode(Vector3 v)
+        {
+            return new Vector3(
+                Mathf.Round(v.x / Epsilon) * Epsilon,
+                Mathf.Round(v.y / Epsilon) * Epsilon,
+                Mathf.Round(v.z / Epsilon) * Epsilon
+            ).GetHashCode();
         }
     }
 }

@@ -50,7 +50,12 @@ public class MeshWaveController : MonoBehaviour
         m_computeShaderInstance = Instantiate(m_computeShaderTemplate);
         m_waveVisualizerMaterialInstance = Instantiate(m_waveVisualizerMaterialTemplate);
         GetComponent<MeshRenderer>().material = m_waveVisualizerMaterialInstance;
-        m_mesh = GetComponent<MeshFilter>().mesh;
+
+        var meshFilter = GetComponent<MeshFilter>();
+        m_mesh = meshFilter.mesh;
+        MeshUtils.ConnectVerticesAtSamePosition(ref m_mesh);
+        meshFilter.mesh = m_mesh;
+
         m_vertexCount = m_mesh.vertexCount;
 
         maxNeighboringVertices = Mathf.Clamp(maxNeighboringVertices, 4, 8);
@@ -96,7 +101,6 @@ public class MeshWaveController : MonoBehaviour
 
     private void Update()
     {
-        Debug.Log("Input Buffer Step: " + m_inputBufferStep);
         if(m_inputBufferStep == InputBufferStep.None)
         {
             if(m_disturbedVertexIndices.Count > 0)
@@ -151,7 +155,7 @@ public class MeshWaveController : MonoBehaviour
     {
         Destroy(m_waveVisualizerMaterialInstance);
         Destroy(m_computeShaderInstance);
-        
+
         m_adjacentVertexIndices.Dispose();
 
         m_adjacentVertexIndicesBuffer?.Release();
