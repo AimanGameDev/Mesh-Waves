@@ -19,33 +19,33 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     if (id.x >= _VertexCount) return;
 
     uint adjacentAmplitudeIndex = id.x * (_MaxNeighbors + 1);
-    float adjacentAmplitudesSum = 0f;
-    float currentAmplitude = 0f;
+    float adjacentAmplitudesSum = 0.0;
+    float currentAmplitude = 0.0;
 
     if (_CurrentBuffer == 0)
     {
         currentAmplitude = currentBuffer[id.x];
-        for (int i = 1; i <= _MaxNeighbors; i++)
+        for (uint i = 1; i <= _MaxNeighbors; i++)
         {
             int neighborIndex = adjacentIndicesBuffer[adjacentAmplitudeIndex + i];
-            float neighborAmplitude = neighborIndex == -1 ? 0f : previousBuffer[neighborIndex];
+            float neighborAmplitude = neighborIndex == -1 ? 0.0 : previousBuffer[neighborIndex];
             adjacentAmplitudesSum += neighborAmplitude;
         }
     }
     else
     {
         currentAmplitude = previousBuffer[id.x];
-        for (int i = 1; i <= _MaxNeighbors; i++)
+        for (uint i = 1; i <= _MaxNeighbors; i++)
         {
             int neighborIndex = adjacentIndicesBuffer[adjacentAmplitudeIndex + i];
-            float neighborAmplitude = neighborIndex == -1 ? 0f : currentBuffer[neighborIndex];
+            float neighborAmplitude = neighborIndex == -1 ? 0.0 : currentBuffer[neighborIndex];
             adjacentAmplitudesSum += neighborAmplitude;
         }
     }
 
     float newAmplitude = inputBuffer[id.x] + (adjacentAmplitudesSum / (_MaxNeighbors * 0.5f)) - currentAmplitude;
     newAmplitude *= _Damping;
-    newAmplitude = clamp(newAmplitude, -1f, 1f);
+    newAmplitude = clamp(newAmplitude, -1.0, 1.0);
 
     if (_CurrentBuffer == 0)
     {

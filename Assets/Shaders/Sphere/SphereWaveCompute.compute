@@ -18,8 +18,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     if (id.x >= _VertexCount) return;
 
     uint adjacentAmplitudeIndex = id.x * 7;
-    float adjacentAmplitudesSum = 0.0f;
-    float currentAmplitude = 0.0f;
+    float adjacentAmplitudesSum = 0.0;
+    float currentAmplitude = 0.0;
 
     if (_CurrentBuffer == 0)
     {
@@ -27,7 +27,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         for (int i = 1; i <= 6; i++)
         {
             int neighborIndex = adjacentAmplitudesIndices[adjacentAmplitudeIndex + i];
-            float neighborAmplitude = neighborIndex == -1 ? 0.0f : previousAmplitudes[neighborIndex];
+            float neighborAmplitude = neighborIndex == -1 ? 0.0 : previousAmplitudes[neighborIndex];
             adjacentAmplitudesSum += neighborAmplitude;
         }
     }
@@ -37,14 +37,14 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         for (int i = 1; i <= 6; i++)
         {
             int neighborIndex = adjacentAmplitudesIndices[adjacentAmplitudeIndex + i];
-            float neighborAmplitude = neighborIndex == -1 ? 0.0f : currentAmplitudes[neighborIndex];
+            float neighborAmplitude = neighborIndex == -1 ? 0.0 : currentAmplitudes[neighborIndex];
             adjacentAmplitudesSum += neighborAmplitude;
         }
     }
 
     float newAmplitude = inputAmplitudes[id.x] + (adjacentAmplitudesSum / 3.0) - currentAmplitude;
     newAmplitude *= _Damping;
-    newAmplitude = clamp(newAmplitude, -1.0f, 1.0f);
+    newAmplitude = clamp(newAmplitude, -1.0, 1.0);
 
     if (_CurrentBuffer == 0)
     {

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Unity.Mathematics;
 using Unity.Collections;
 using UnityEngine;
 using Info = MeshWaveInfo;
@@ -46,6 +45,7 @@ public class MeshWaveController : MonoBehaviour
     {
         Application.targetFrameRate = 60;
 
+        GetComponent<MeshRenderer>().material = m_waveVisualizerMaterial;
         m_mesh = GetComponent<MeshFilter>().mesh;
         m_vertexCount = m_mesh.vertexCount;
 

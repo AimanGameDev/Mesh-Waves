@@ -1,34 +1,31 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class MeshWaveDisturbanceInputController : MonoBehaviour
 {
-    private Mesh mesh;
-    private Vector3[] vertices;
-    private Transform meshTransform;
+    private Mesh m_mesh;
+    private Vector3[] m_vertices;
+    private Transform m_meshTransform;
 
-    public MeshWaveController meshWaveController;
-    public MeshAnimator meshAnimator;
+    private MeshWaveController m_meshWaveController;
+    private MeshAnimator m_meshAnimator;
 
     void Start()
     {
-        meshAnimator = GetComponent<MeshAnimator>();
-        meshWaveController = GetComponent<MeshWaveController>();
-        mesh = GetComponent<MeshFilter>().mesh;
-        vertices = mesh.vertices;
-        meshTransform = transform;
+        m_meshAnimator = GetComponent<MeshAnimator>();
+        m_meshWaveController = GetComponent<MeshWaveController>();
+        m_mesh = GetComponent<MeshFilter>().mesh;
+        m_vertices = m_mesh.vertices;
+        m_meshTransform = transform;
     }
 
-    // Find closest vertex in local space
     public int FindClosestVertexLocal(Vector3 localPoint)
     {
         float minDistance = float.MaxValue;
         int closestVertex = 0;
 
-        for (int i = 0; i < vertices.Length; i++)
+        for (int i = 0; i < m_vertices.Length; i++)
         {
-            float distance = Vector3.Distance(vertices[i], localPoint);
+            float distance = Vector3.Distance(m_vertices[i], localPoint);
             if (distance < minDistance)
             {
                 minDistance = distance;
@@ -39,15 +36,13 @@ public class MeshWaveDisturbanceInputController : MonoBehaviour
         return closestVertex;
     }
 
-    // Find closest vertex in world space
     public int FindClosestVertexWorld(Vector3 worldPoint)
     {
         // Convert world point to local space
-        Vector3 localPoint = meshTransform.InverseTransformPoint(worldPoint);
+        Vector3 localPoint = m_meshTransform.InverseTransformPoint(worldPoint);
         return FindClosestVertexLocal(localPoint);
     }
 
-    // Example usage with mouse position
     void Update()
     {
         if (Input.GetMouseButtonDown(0))
@@ -55,9 +50,12 @@ public class MeshWaveDisturbanceInputController : MonoBehaviour
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
-                int closestVertex = FindClosestVertexWorld(hit.point);
-                meshWaveController?.AddDisturbedVertex(closestVertex);
-                meshAnimator?.AddDisturbedVertex(closestVertex);
+                if(hit.collider.gameObject == gameObject)
+                {
+                    int closestVertex = FindClosestVertexWorld(hit.point);
+                    m_meshWaveController?.AddDisturbedVertex(closestVertex);
+                    m_meshAnimator?.AddDisturbedVertex(closestVertex);
+                }
             }
         }
     }
