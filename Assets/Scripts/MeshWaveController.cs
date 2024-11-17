@@ -50,7 +50,12 @@ public class MeshWaveController : MonoBehaviour
 
         var meshFilter = GetComponent<MeshFilter>();
         m_mesh = meshFilter.mesh;
-        MeshUtils.ConnectVerticesAtSamePosition(ref m_mesh);
+        var vertices = new List<Vector3>();
+        var triangles = new List<int>();
+        var normals = new List<Vector3>();
+        var uvs = new List<Vector2>();
+        MeshUtils.UpdateMeshData(ref m_mesh, ref vertices, ref triangles, ref normals, ref uvs);
+        MeshUtils.ConnectVerticesAtSamePosition(ref m_mesh, ref vertices, ref triangles, ref normals, ref uvs);
         meshFilter.mesh = m_mesh;
         GetComponent<MeshCollider>().sharedMesh = m_mesh;
 
@@ -67,12 +72,28 @@ public class MeshWaveController : MonoBehaviour
         m_disturbedVertexIndices = new List<int>(Info.MAX_DISTURBED_VERTEX_COUNT);
         m_disturbedVertexIndicesProcessing = new List<int>(Info.MAX_DISTURBED_VERTEX_COUNT);
         m_adjacentVertexIndices = new NativeArray<int>(m_vertexCount * adjacentIndicesBufferSize, Allocator.Persistent);
-        var adjacentVertexDistances = new NativeArray<float>(m_vertexCount * adjacentIndicesBufferSize, Allocator.Persistent);
 
-        MeshUtils.GenerateAdjacentVertexIndices(in m_mesh, ref m_adjacentVertexIndices, ref adjacentVertexDistances, adjacentIndicesBufferSize);
-        // MeshUtils.GenerateAdjacentVertexIndices(in m_mesh, ref m_adjacentVertexIndices, adjacentIndicesBufferSize);
+        var adjacentVertexDistances = new NativeArray<float>(m_vertexCount * adjacentIndicesBufferSize, Allocator.TempJob);
+        var verticesArray = new NativeArray<Vector3>(m_mesh.vertices, Allocator.TempJob);
+        var trianglesArray = new NativeArray<int>(m_mesh.triangles, Allocator.TempJob);
+
+        var context = new MeshUtils.GenerateAdjacentVertexIndicesContext
+        {
+            mesh = m_mesh,
+            adjacentVertexIndices = m_adjacentVertexIndices,
+            adjacentVertexDistances = adjacentVertexDistances,
+            maxEntriesPerVertex = adjacentIndicesBufferSize,
+            vertices = verticesArray,
+            triangles = trianglesArray,
+        };
+
+        MeshUtils.GenerateAdjacentVertexIndices(in context);
+
         m_adjacentVertexIndicesBuffer.SetData(m_adjacentVertexIndices);
+
         adjacentVertexDistances.Dispose();
+        verticesArray.Dispose();
+        trianglesArray.Dispose();
 
         m_kernelHandle = m_computeShaderInstance.FindKernel(Info.CS_MAIN_KERNEL);
         m_computeShaderInstance.GetKernelThreadGroupSizes(m_kernelHandle, out m_threadGroupSize, out _, out _);
@@ -93,10 +114,10 @@ public class MeshWaveController : MonoBehaviour
 
         m_inputBufferStep = InputBufferStep.None;
 
-        for (int i = 0; i < m_mesh.normals.Length; i++)
-            m_centerOfRepulsionBasedOnAverageNormals += m_mesh.normals[i];
+        for (int i = 0; i < normals.Count; i++)
+            m_centerOfRepulsionBasedOnAverageNormals += normals[i];
 
-        m_centerOfRepulsionBasedOnAverageNormals /= m_mesh.normals.Length;
+        m_centerOfRepulsionBasedOnAverageNormals /= normals.Count;
     }
 
     private void Update()
