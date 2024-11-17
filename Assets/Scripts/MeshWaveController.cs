@@ -67,9 +67,12 @@ public class MeshWaveController : MonoBehaviour
         m_disturbedVertexIndices = new List<int>(Info.MAX_DISTURBED_VERTEX_COUNT);
         m_disturbedVertexIndicesProcessing = new List<int>(Info.MAX_DISTURBED_VERTEX_COUNT);
         m_adjacentVertexIndices = new NativeArray<int>(m_vertexCount * adjacentIndicesBufferSize, Allocator.Persistent);
+        var adjacentVertexDistances = new NativeArray<float>(m_vertexCount * adjacentIndicesBufferSize, Allocator.Persistent);
 
-        MeshUtils.GenerateAdjacentVertexIndices(in m_mesh, ref m_adjacentVertexIndices, adjacentIndicesBufferSize);
+        MeshUtils.GenerateAdjacentVertexIndices(in m_mesh, ref m_adjacentVertexIndices, ref adjacentVertexDistances, adjacentIndicesBufferSize);
+        // MeshUtils.GenerateAdjacentVertexIndices(in m_mesh, ref m_adjacentVertexIndices, adjacentIndicesBufferSize);
         m_adjacentVertexIndicesBuffer.SetData(m_adjacentVertexIndices);
+        adjacentVertexDistances.Dispose();
 
         m_kernelHandle = m_computeShaderInstance.FindKernel(Info.CS_MAIN_KERNEL);
         m_computeShaderInstance.GetKernelThreadGroupSizes(m_kernelHandle, out m_threadGroupSize, out _, out _);
