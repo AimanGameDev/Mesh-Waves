@@ -25,16 +25,16 @@ public class SettingsControllerUI : MonoBehaviour
         m_meshWaveConfiguration.damping = GUILayout.HorizontalSlider(m_meshWaveConfiguration.damping, 0f, 1f);
 
         GUILayout.Label("Wave Height : " + m_meshWaveConfiguration.waveHeight);
-        m_meshWaveConfiguration.waveHeight = GUILayout.HorizontalSlider(m_meshWaveConfiguration.waveHeight, 0f, 10f);
+        m_meshWaveConfiguration.waveHeight = GUILayout.HorizontalSlider(m_meshWaveConfiguration.waveHeight, 0f, 1000f);
 
         GUILayout.Label("Min Wave Height : " + m_meshWaveConfiguration.minWaveHeight);
-        m_meshWaveConfiguration.minWaveHeight = GUILayout.HorizontalSlider(m_meshWaveConfiguration.minWaveHeight, -10f, 10f);
+        m_meshWaveConfiguration.minWaveHeight = GUILayout.HorizontalSlider(m_meshWaveConfiguration.minWaveHeight, -1f, 0f);
 
         GUILayout.Label("Max Wave Height : " + m_meshWaveConfiguration.maxWaveHeight);
-        m_meshWaveConfiguration.maxWaveHeight = GUILayout.HorizontalSlider(m_meshWaveConfiguration.maxWaveHeight, -10f, 10f);
+        m_meshWaveConfiguration.maxWaveHeight = GUILayout.HorizontalSlider(m_meshWaveConfiguration.maxWaveHeight, 0f, 1f);
 
         GUILayout.Label("Color Sharpness : " + m_meshWaveConfiguration.colorSharpness);
-        m_meshWaveConfiguration.colorSharpness = GUILayout.HorizontalSlider(m_meshWaveConfiguration.colorSharpness, 0f, 100f);
+        m_meshWaveConfiguration.colorSharpness = GUILayout.HorizontalSlider(m_meshWaveConfiguration.colorSharpness, 0f, 1f);
 
         if (GUILayout.Button("Apply Configuration"))
         {

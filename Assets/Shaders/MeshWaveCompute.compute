@@ -38,6 +38,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     float newAmplitude = inputBuffer[id.x] + (adjacentAmplitudesSum / (_MaxNeighbors / 2.0)) - currentAmplitude;
     newAmplitude *= _Damping;
+    newAmplitude = clamp(newAmplitude, -1.0, 1.0);
 
     currentBuffer[id.x] = _CurrentBufferSelector * currentBufferValue + (1.0 - _CurrentBufferSelector) * newAmplitude;
     previousBuffer[id.x] = _CurrentBufferSelector * newAmplitude + (1.0 - _CurrentBufferSelector) * previousBufferValue;

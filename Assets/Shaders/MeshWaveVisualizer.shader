@@ -72,11 +72,13 @@ Shader "Custom/MeshWaveVisualizer"
                 v.vertex = mul(unity_WorldToObject, float4(worldPos, 1.0));
                 
                 float3 worldNormal = normalize(mul(unity_ObjectToWorld, float4(v.normal, 0.0)).xyz);
-                worldNormal = normalize(worldNormal + directionFromCenter * amplitude);
+                worldNormal = normalize(worldNormal + directionFromCenter * waveHeight);
                 v.normal = normalize(mul(unity_WorldToObject, float4(worldNormal, 0.0)).xyz);
-                
-                float heightColor = amplitude * _ColorSharpness;
-                v.color = lerp(_ColorA, _ColorB, heightColor);
+            
+                v.color = float4(waveHeight, 0, 0, 1);
+                // float heightColor = waveHeight - _ColorSharpness;
+                // v.color = heightColor > 0.5 ? _ColorB : _ColorA;
+                // v.color = lerp(_ColorA, _ColorB, heightColor);
             #else
                 v.color = _ColorA;
             #endif
