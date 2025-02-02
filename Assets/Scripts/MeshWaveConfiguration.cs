@@ -19,7 +19,7 @@ public class MeshWaveConfiguration : MonoBehaviour
     {
         var config = configuration;
 
-        config.targetFrameRate = 6000;
+        config.targetFrameRate = 60;
         config.damping = 0.90f;
         config.waveHeight = 10f;
         config.minWaveHeight = -0.1f;
