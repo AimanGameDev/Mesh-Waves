@@ -9,4 +9,6 @@ Sphere:
 ![image](https://github.com/user-attachments/assets/366e6675-d70a-4c26-8133-c39bb6e6da23)
 
 Monkey:
+![image](https://github.com/user-attachments/assets/5c0f3c5f-79b9-4888-9370-ebc3abb8853c)
+![image](https://github.com/user-attachments/assets/ad34969b-0011-42d1-9a88-6d2d41110377)
 ![image](https://github.com/user-attachments/assets/e9c7c0a4-cc38-4b96-861a-b4dfc0b55e53)
